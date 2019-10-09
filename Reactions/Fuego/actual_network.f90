@@ -1,13 +1,21 @@
+! An "null" network.  This provides the properties of a set of non-reacting species.
+!
+! nspec            -- the number of species
+! naux             -- the number of auxiliary variables
+!
+! spec_names       -- the name of the species
+!
+! aux_names        -- the name of the auxiliary variable
+!
+! molec_wt         -- molecular weight of species
+
 module actual_network
 
-  use fuego_chemistry 
-  use chemistry_module, only : nspecies, nelements, nreactions, chemistry_init, &
-       chemistry_close, chemistry_initialized, spec_names, elem_names, &
-       L_spec_name, L_elem_name
+  use chemistry_module, only : nspecies, chemistry_init, chemistry_close, chemistry_initialized, spec_names, elem_names
 
   implicit none
 
-  integer :: naux
+  integer :: nspec, nelem, nreac, nfit, naux
   character (len=16), save, allocatable :: aux_names(:)
 
 contains
@@ -15,6 +23,8 @@ contains
   subroutine actual_network_init
 
     if (.not. chemistry_initialized)  call chemistry_init()
+    call ckindx(nelem,nspec,nreac,nfit)
+    nspecies = nspec
     naux = 0
     allocate(aux_names(naux))
 
@@ -24,6 +34,8 @@ contains
 
     call chemistry_close()
     deallocate(aux_names)
+    nspecies = 0
+    naux = 0
 
   end subroutine actual_network_close
 

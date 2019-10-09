@@ -1,9 +1,7 @@
 ! the network module provides the information about the species we are
 ! advecting: 
 !
-! nspecies      -- the number of species
-!
-! nreactons      -- the number of reactions
+! nspec      -- the number of species
 !
 ! spec_names -- the name of the chemical species
 !
@@ -28,19 +26,17 @@ contains
     implicit none
     
     ! First, we call the specific network initialization.
-    ! This should set number of aux variables (nspecies, nreactions should be parameters
-    ! defined there), and the components of the species.
+    ! This should set the number of species and number of
+    ! aux variables, and the components of the species.
+    ! Note that the network MUST define nspec and naux
+    ! as parameters, or else the compiler will throw an error.
     
     call actual_network_init
 
     ! Check to make sure, and if not, throw an error.
 
-    if ( nspecies .lt. 1 ) then
-       call bl_error("Network cannot have a nonpositive number of species.")
-    endif
-
-    if ( nreactions .lt. 0 ) then
-       call bl_error("Network cannot have a negative number of reactions.")
+    if ( nspec .le. 0 ) then
+       call bl_error("Network cannot have a negative number of species.")
     endif
 
     if ( naux .lt. 0 ) then
@@ -70,7 +66,7 @@ contains
 
     r = -1
 
-    do n = 1, nspecies
+    do n = 1, nspec
        if (name == spec_names(n)) then
           r = n
           return

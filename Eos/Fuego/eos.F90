@@ -8,9 +8,7 @@ module eos_module
   use amrex_fort_module, only : amrex_real
   use amrex_constants_module
   use eos_type_module
-  use fuego_chemistry
-  use network, only : nspecies
-  use chemistry_module, only : Ru, inv_mwt, chemistry_init, chemistry_initialized, spec_names, elem_names
+  use chemistry_module, only : nspecies, Ru, inv_mwt, chemistry_init, chemistry_initialized, spec_names, elem_names
 
   implicit none
   character (len=64) :: eos_name = "fuego"
@@ -28,7 +26,6 @@ module eos_module
   interface
      subroutine amrex_array_init_snan (p, nelem) bind(C,name="amrex_array_init_snan")
        use iso_c_binding, only : c_double, c_size_t
-       implicit none
        real(c_double),intent(inout) :: p
        integer (kind=c_size_t),intent(in),value :: nelem
      end subroutine amrex_array_init_snan
@@ -39,6 +36,7 @@ contains
   subroutine eos_init(small_temp, small_dens)
 
     use extern_probin_module
+!   use amrex_parallel_module
     use iso_c_binding, only : c_double, c_size_t
 
     implicit none
@@ -251,8 +249,8 @@ contains
     implicit none
 
     double precision, intent(in) :: T
-    integer, intent(in)          :: Nsp
-    double precision, intent(inout), dimension(1:Nsp) :: hi
+    double precision, intent(in), dimension(1:Nsp) :: hi
+    integer, intent(in) :: Nsp
 
     call ckhms(T,hi(:))
 

@@ -11,11 +11,10 @@
 module eos_module
 
   use amrex_fort_module, only : amrex_real
-  use amrex_constants_module
-  use fuego_chemistry
+  use bl_constants_module
   use eos_type_module
-  use network, only : nspecies
-  use chemistry_module, only : Ru, inv_mwt, chemistry_init, chemistry_initialized, spec_names, elem_names, molecular_weight
+
+  use chemistry_module, only : nspecies, Ru, inv_mwt, chemistry_init, chemistry_initialized, spec_names, elem_names, molecular_weight
 
   implicit none
 
@@ -42,7 +41,6 @@ module eos_module
   interface
      subroutine amrex_array_init_snan (p, nelem) bind(C,name="amrex_array_init_snan")
        use iso_c_binding, only : c_double, c_size_t
-       implicit none
        real(c_double),intent(inout) :: p
        integer (kind=c_size_t),intent(in),value :: nelem
      end subroutine amrex_array_init_snan
@@ -95,6 +93,7 @@ end subroutine actual_eos_init
 subroutine eos_init(small_temp, small_dens)
 
   use extern_probin_module
+  use parallel
   use iso_c_binding, only : c_double, c_size_t
 
   implicit none
@@ -277,16 +276,6 @@ subroutine eos_get_activity(state)
  call SRK_EOS_GetSpecies_Activity(state)
 
 end subroutine eos_get_activity
-
-subroutine eos_get_activity_h(state)
-
- implicit none
-
- type (eos_t), intent(inout) :: state
-
- call SRK_EOS_GetSpecies_Activity(state)
-
-end subroutine eos_get_activity_h
 
 subroutine eos_get_transport(state)
 
@@ -1593,7 +1582,6 @@ end subroutine SRK_EOS_GetMixtureCp
 ! Given a mixture composition calculate mixture enthalpy using SRK EOS  !  
 !=======================================================================!
 subroutine SRK_EOS_GetMixture_H(state)
-  implicit none
   type (eos_t), intent(inout) :: state
   real(amrex_real) :: tau, K1
   real(amrex_real) :: eosT1Denom, eosT3Denom 
@@ -1878,7 +1866,6 @@ end subroutine SRK_EOS_GetSpeciesE
 !  the following derivatives for testing, dP/dT, dP/dtau, dH/dtau !
 !=================================================================!
 subroutine  SRK_EOS_GetDerivative(state)
-  implicit none
   type (eos_t), intent(inout) :: state
   integer :: i,j
   real(amrex_real) :: tau, K1

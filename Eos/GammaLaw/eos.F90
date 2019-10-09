@@ -13,13 +13,12 @@ module eos_module
   character (len=64) :: eos_name = "gamma_law"
 
   real(amrex_real), save :: gamma_const
-  double precision, parameter :: R = 8.314462145468952d7
 
   integer, parameter :: nelements = 1
   integer, parameter :: L_elem_name = 3 ! Each element name has at most 3 characters
   character*(L_elem_name), save :: elem_names(nelements)
 
-  !integer, parameter :: nspecies = 1 ! already in eos_type_module
+  integer, parameter :: nspecies = 1
   integer, parameter :: L_spec_name = 16 ! Each species name has at most 8 characters
   character*(L_spec_name), save :: spec_names(nspecies)
 
@@ -80,11 +79,14 @@ contains
   subroutine eos_top(state)
 
     use amrex_constants_module
+    use fundamental_constants_module, only: k_B, n_A
     use network, only: molec_wt
 
     implicit none
 
     type (eos_t), intent(inout) :: state
+
+    double precision, parameter :: R = k_B*n_A
 
     ! Calculate wbar
     call eos_wb(state)
@@ -154,10 +156,13 @@ contains
   subroutine eos_tp(state)
 
     use amrex_constants_module
+    use fundamental_constants_module, only: k_B, n_A
 
     implicit none
 
     type (eos_t), intent(inout) :: state
+
+    double precision, parameter :: R = k_B*n_A
 
     call eos_top(state)
 
@@ -172,10 +177,13 @@ contains
   subroutine eos_rp(state)
 
     use amrex_constants_module
+    use fundamental_constants_module, only: k_B, n_A
 
     implicit none
 
     type (eos_t), intent(inout) :: state
+
+    real(amrex_real), parameter :: R = k_B*n_A
 
     real(amrex_real) :: poverrho
 
@@ -193,10 +201,13 @@ contains
   subroutine eos_re(state)
 
     use amrex_constants_module
+    use fundamental_constants_module, only: k_B, n_A
 
     implicit none
 
     type (eos_t), intent(inout) :: state
+
+    double precision, parameter :: R = k_B*n_A
 
     double precision :: poverrho
 
@@ -340,9 +351,12 @@ contains
   subroutine eos_hi_vec(mass, masslo, masshi, T, Tlo, Thi, hi, hilo, hihi, low, high, Nsp)
 
     use amrex_constants_module
+    use fundamental_constants_module, only: k_B, n_A
     use network, only: molec_wt
 
     implicit none
+
+    double precision, parameter :: R = k_B*n_A
 
     integer, intent(in) :: masslo(3), masshi(3)
     integer, intent(in) :: Tlo(3), Thi(3)
