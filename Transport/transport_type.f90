@@ -1,7 +1,7 @@
 module transport_type_module
 
   use amrex_fort_module, only : amrex_real
-  use network, only: nspecies
+  use network, only: nspec
   use eos_module
 
   implicit none
@@ -36,7 +36,6 @@ module transport_type_module
 contains
 
   subroutine trv_build(trv,n)    
-    implicit none
     type(trv_t), intent(inout) :: trv
     integer, intent(in) :: n
     integer :: i
@@ -46,7 +45,7 @@ contains
        allocate(trv%xi(n))
        allocate(trv%lam(n))
 !   need to set this up to build different D depending on flag
-       allocate(trv%Ddiag(n,nspecies))
+       allocate(trv%Ddiag(n,nspec))
        do i=1,n
           call build(trv%eos_state(i))
        enddo
@@ -55,7 +54,6 @@ contains
   end subroutine trv_build
   
   subroutine trv_destroy(trv)
-    implicit none
     type(trv_t), intent(inout) :: trv
     integer :: i
     if (trv%npts .gt. 0) then

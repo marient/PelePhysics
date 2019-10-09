@@ -12,7 +12,7 @@ module actual_transport_module
   character (len=64) :: transport_name = "sutherland"
   logical, save, private :: suth_initialized = .false.
   integer, save, private :: npts_suth = 0
-  real(amrex_real), save, allocatable :: Tp(:), Cpp(:)
+  real(amrex_real), save, allocatable, ptr :: Tp(:), Cpp(:)
 
   !$omp threadprivate(suth_initialized,npts_suth,Tp,Cpp)
 
@@ -38,7 +38,6 @@ contains
 
 
   subroutine build_internal(npts)
-    implicit none
     integer, intent(in) :: npts
 
     if (npts_suth .ne. npts .and. npts.gt.0) then
@@ -54,8 +53,6 @@ contains
 
 
   subroutine destroy_internal
-
-    implicit none
 
     deallocate(Tp)
     deallocate(Cpp)

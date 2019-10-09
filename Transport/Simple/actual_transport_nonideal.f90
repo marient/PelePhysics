@@ -3,9 +3,7 @@ module actual_transport_module
   use amrex_fort_module, only : amrex_real
   use eos_type_module
   use transport_type_module
-  use fuego_chemistry
   use chemistry_module, only : Ru
-  use network, only : nspecies
 
   implicit none
 
@@ -45,32 +43,28 @@ contains
 
     integer :: n,i,j
     integer :: iH2O
-    integer :: nspecies_tran
-
-    call egtransetKK(nspecies_tran)
-    if (nspecies_tran .ne. nspecies) then
-       call bl_pd_abort('Incompatible transport database')
-    endif 
+    
+    call egtransetKK(nspec)
     call egtransetNO(nfit)
 
     if(.not.allocated(wt)) then
 
-       allocate(wt(nspecies))
-       allocate(iwt(nspecies))
-       allocate(eps(nspecies))
-       allocate(sig(nspecies))
-       allocate(dip(nspecies))
-       allocate(pol(nspecies))
-       allocate(zrot(nspecies))
-       allocate(nlin(nspecies))
+       allocate(wt(nspec))
+       allocate(iwt(nspec))
+       allocate(eps(nspec))
+       allocate(sig(nspec))
+       allocate(dip(nspec))
+       allocate(pol(nspec))
+       allocate(zrot(nspec))
+       allocate(nlin(nspec))
        
-       allocate(fitmu(nfit,nspecies))
-       allocate(fitlam(nfit,nspecies))
-       allocate(fitdbin(nfit,nspecies,nspecies))
+       allocate(fitmu(nfit,nspec))
+       allocate(fitlam(nfit,nspec))
+       allocate(fitdbin(nfit,nspec,nspec))
 
-       allocate(Sigmaij(nspecies,nspecies))
+       allocate(Sigmaij(nspec,nspec))
 
-       allocate(Kappai(nspecies))
+       allocate(Kappai(nspec))
        
     end if
 
@@ -87,11 +81,11 @@ contains
 
     iwt = 1.d0/wt
 
-    !   do n=1,nspecies
+    !   do n=1,nspec
 
     !      write(6,*)"coeflam",fitlam(:,n)
     !      write(6,*)"coefeta",fitmu(:,n)
-    !   do i=1,nspecies
+    !   do i=1,nspec
     !      write(6,*)"coefdebin",fitdbin(:,i,n)
     !   enddo
     !   enddo
@@ -140,8 +134,8 @@ contains
 
  
     ! Compute Sigma_ij
-    do j = 1,nspecies
-       do i = 1,nspecies
+    do j = 1,nspec
+       do i = 1,nspec
 !!$         Sigmaij(i,j) = sqrt(sig(i)*sig(j))*1e-8  ! converted into cm
           Sigmaij(i,j) = 0.5d0*(sig(i)+sig(j))*1e-8  ! converted into cm
        end do
@@ -178,7 +172,6 @@ contains
 
 
   subroutine build_internal(npts)
-    implicit none
     integer, intent(in) :: npts
 
     if (npts_smp .ne. npts .and. npts.gt.0) then
@@ -187,15 +180,15 @@ contains
        endif
        allocate(Tloc(npts))
        allocate(rholoc(npts))
-       allocate(Yloc(npts,nspecies))
-       allocate(Xloc(npts,nspecies))
+       allocate(Yloc(npts,nspec))
+       allocate(Xloc(npts,nspec))
        allocate(logT(npts,norder))
        allocate(wbar(npts))
 
-       allocate(muloc(npts,nspecies) )
-       allocate(lamloc(npts,nspecies) )
-       allocate(xiloc(npts,nspecies) )
-       allocate(dbinloc(npts,nspecies,nspecies) )
+       allocate(muloc(npts,nspec) )
+       allocate(lamloc(npts,nspec) )
+       allocate(xiloc(npts,nspec) )
+       allocate(dbinloc(npts,nspec,nspec) )
        npts_smp = npts
     endif
 
@@ -203,8 +196,6 @@ contains
 
 
   subroutine destroy_internal
-
-    implicit none
 
     deallocate(Tloc)
     deallocate(rholoc)
@@ -226,8 +217,6 @@ contains
   subroutine actual_transport(which, coeff)
 
     use amrex_error_module
-
-    implicit none
 
     type (wtr_t), intent(in   ) :: which
     type (trv_t), intent(inout) :: coeff
@@ -267,15 +256,15 @@ contains
     !       write(6,*)"yloc", Xloc(i,1),Yloc(i,:)
     !  enddo
 
-    do n = 1, nspecies
+    do n = 1, nspec
        do i = 1,coeff%npts
 
-          Yloc(i,n) = Yloc(i,n) + trace*(Xloc(i,1)/dble(nspecies)-Yloc(i,n)) 
+          Yloc(i,n) = Yloc(i,n) + trace*(Xloc(i,1)/dble(nspec)-Yloc(i,n)) 
 
        enddo
     enddo
 
-    do n = 1, nspecies
+    do n = 1, nspec
        do i = 1,coeff%npts
 
           wbar(i) = wbar(i) + Yloc(i,n)*iwt(n)
@@ -298,7 +287,7 @@ contains
     !  write(6,*)"wbar",wbar
 
 
-    do n = 1, nspecies
+    do n = 1, nspec
        do i = 1,coeff%npts
 
           Xloc(i,n) = Yloc(i,n)*wbar(i)*iwt(n)
@@ -316,7 +305,7 @@ contains
 
 
     if (which % wtr_get_mu) then
-       do n=1,nspecies
+       do n=1,nspec
           do i=1,coeff%npts
 
              muloc(i,n) = fitmu(1,n)+fitmu(2,n)*logT(i,1)+ fitmu(3,n)*logT(i,2)  &
@@ -328,7 +317,7 @@ contains
 
        coeff % mu(:) = 0.d0
 
-       do n=1,nspecies
+       do n=1,nspec
           do i=1,coeff%npts
 
              coeff%mu(i) = coeff%mu(i)+ Xloc(i,n)*muloc(i,n)**6.d0
@@ -350,7 +339,7 @@ contains
 
           coeff % xi(:) = 0.d0
 
-          do n=1,nspecies
+          do n=1,nspec
              do i=1,coeff%npts
 
                 coeff%xi(i) = coeff%xi(i)+ Xloc(i,n)*xiloc(i,n)**0.75d0
@@ -369,7 +358,7 @@ contains
 
     if (which % wtr_get_lam) then
 
-       do n=1,nspecies
+       do n=1,nspec
           do i=1,coeff%npts
 
              lamloc(i,n) = fitlam(1,n)+fitlam(2,n)*logT(i,1)+ fitlam(3,n)*logT(i,2)  &
@@ -381,7 +370,7 @@ contains
 
        coeff % lam(:) = 0.d0
 
-       do n=1,nspecies
+       do n=1,nspec
           do i=1,coeff%npts
 
              coeff%lam(i) = coeff%lam(i)+ Xloc(i,n)*lamloc(i,n)**0.25d0
@@ -407,7 +396,7 @@ contains
 
     if (which % wtr_get_Ddiag .or. which % wtr_get_Dmat) then
 
-       do n=1,nspecies
+       do n=1,nspec
           do nn=1,n-1
              do i=1,coeff%npts
 
@@ -430,7 +419,7 @@ contains
 
           call mixture(coeff,coeff%npts)
 
-          do n=1,nspecies
+          do n=1,nspec
              do i=1,coeff%npts
 
                 coeff%Ddiag(i,n) = rholoc(i)*coeff%Ddiag(i,n)
@@ -442,8 +431,8 @@ contains
 
           call matrix(coeff, coeff%npts)
 
-          do n=1,nspecies
-             do nn=1,nspecies
+          do n=1,nspec
+             do nn=1,nspec
                 do i=1,coeff%npts
 
                    coeff%Dmat(i,nn,n) = rholoc(i)*coeff%Dmat(i,nn,n)
@@ -466,8 +455,8 @@ contains
     type (trv_t), intent(inout) :: coeff
     integer :: npts
 
-    real(amrex_real) :: cvk(npts,nspecies), cvkint(npts,nspecies), cvkrot(npts,nspecies)
-    real(amrex_real) :: FofT(npts,nspecies), Fnorm(nspecies), epskoverT
+    real(amrex_real) :: cvk(npts,nspec), cvkint(npts,nspec), cvkrot(npts,nspec)
+    real(amrex_real) :: FofT(npts,nspec), Fnorm(nspec), epskoverT
 
     real(amrex_real), parameter :: pi = 3.141592653589793238d0
 
@@ -478,7 +467,7 @@ contains
        call ckcvms( coeff % eos_state(n) % T, coeff % eos_state(n)%cvi )
     enddo
 
-    do i=1,nspecies
+    do i=1,nspec
        do n=1,npts
 
           if(nlin(i) .eq.0)then
@@ -501,7 +490,7 @@ contains
        enddo
     enddo
 
-    do i = 1,nspecies
+    do i = 1,nspec
 
        epskoverT = eps(i)/298.d0
 
@@ -510,7 +499,7 @@ contains
 
     enddo
 
-    do i = 1,nspecies
+    do i = 1,nspec
 
        do n=1,npts
 
@@ -523,7 +512,7 @@ contains
 
     enddo
 
-    do i=1,nspecies
+    do i=1,nspec
 
        if(nlin(i) .ne. 0)then
 
@@ -566,10 +555,10 @@ contains
     integer i,j,k,n
 
 
-    do j = 1, nspecies
+    do j = 1, nspec
        term1 = 0.d0
        term2 = 0.d0
-       do k = 1, nspecies
+       do k = 1, nspec
           if(k.ne.j) then
              do i = 1,npts
 
@@ -598,19 +587,19 @@ contains
 
     integer ::  i, j, k, jj, n
     real(kind=8) ::  term1(npts), term2(npts)
-    real(kind=8) :: D_tilde(1:npts,1:nspecies,1:nspecies), Di(1:npts,1:nspecies), Diff_ij(1:npts,1:nspecies,1:nspecies)
-    real(kind=8) :: Deltamat(1:npts,1:nspecies,1:nspecies), Zmat(1:npts,1:nspecies,1:nspecies)
-    real(kind=8), dimension(1:npts,1:nspecies,1:nspecies) :: Pmat, Jmat
-    real(kind=8), dimension(1:npts,1:nspecies) :: Minv, Mmat
-    real(kind=8), dimension(1:npts,1:nspecies,1:nspecies) :: PJ, matrix1, matrix2
+    real(kind=8) :: D_tilde(1:npts,1:nspec,1:nspec), Di(1:npts,1:nspec), Diff_ij(1:npts,1:nspec,1:nspec)
+    real(kind=8) :: Deltamat(1:npts,1:nspec,1:nspec), Zmat(1:npts,1:nspec,1:nspec)
+    real(kind=8), dimension(1:npts,1:nspec,1:nspec) :: Pmat, Jmat
+    real(kind=8), dimension(1:npts,1:nspec) :: Minv, Mmat
+    real(kind=8), dimension(1:npts,1:nspec,1:nspec) :: PJ, matrix1, matrix2
     real(kind=8) :: scr(npts)
 
 
     ! Find Di matrix 
-    do i = 1, nspecies
+    do i = 1, nspec
        term1 = 0.0d0  
        term2 = 0.0d0  
-       do j = 1, nspecies
+       do j = 1, nspec
           if(j.ne.i) then
              do n=1,npts
                 term1(n) = term1(n) + Yloc(n,j)
@@ -625,7 +614,7 @@ contains
 
 
     ! Compute Mmat and Minv
-    do i = 1, nspecies
+    do i = 1, nspec
        do n=1,npts
 
           Mmat(n,i) = Xloc(n,i)/Di(n,i)
@@ -637,8 +626,8 @@ contains
 
     ! Compute P matrix
     Pmat = 0.0d0
-    do i = 1, nspecies
-       do j = 1, nspecies
+    do i = 1, nspec
+       do j = 1, nspec
           do n=1,npts
              Pmat(n,i,j) = - Yloc(n,j)
           enddo
@@ -653,11 +642,11 @@ contains
 
     ! Compute Deltamat
     Deltamat = 0.0d0
-    do i = 1, nspecies
-       do j = 1, nspecies
+    do i = 1, nspec
+       do j = 1, nspec
           if(i.eq.j) then
              term1 = 0.0d0
-             do k = 1, nspecies
+             do k = 1, nspec
                 if(k.ne.i) then
 
                    do n=1,npts
@@ -686,7 +675,7 @@ contains
 
 
     ! Compute Zmat
-    do i = 1, nspecies
+    do i = 1, nspec
        do n=1,npts
           Zmat(n,i,i) = Zmat(n,i,i) + Mmat(n,i)
        enddo
@@ -694,8 +683,8 @@ contains
 
     ! Compute Jmat
     Jmat = 0.d0
-    do i = 1, nspecies
-       do j = 1, nspecies
+    do i = 1, nspec
+       do j = 1, nspec
           do n=1,npts
              Jmat(n,i,j) = Minv(n,i)*Zmat(n,i,j)
           enddo
@@ -704,9 +693,9 @@ contains
 
     ! Compute PJ
     PJ = 0.0d0
-    do i = 1, nspecies
-       do j = 1, nspecies
-          do k = 1, nspecies
+    do i = 1, nspec
+       do j = 1, nspec
+          do k = 1, nspec
              do n=1,npts
                 PJ(n,i,j) = PJ(n,i,j) + Pmat(n,i,k)*Jmat(n,k,j)
              enddo
@@ -717,10 +706,10 @@ contains
 
 
     ! Compute P M^-1 Pt; store it in matrix2
-    do i = 1, nspecies
-       do j = 1, nspecies
+    do i = 1, nspec
+       do j = 1, nspec
           scr = 0.d0
-          do k = 1, nspecies
+          do k = 1, nspec
              do n=1,npts
                 scr(n) = scr(n) + Pmat(n,i,k)*Minv(n,k)*Pmat(n,j,k)
              enddo
@@ -739,10 +728,10 @@ contains
 
 
           !         matrix1=0
-          do i = 1, nspecies
-             do j = 1, nspecies
+          do i = 1, nspec
+             do j = 1, nspec
                 scr = 0.d0
-                do k = 1, nspecies
+                do k = 1, nspec
                    do n=1,npts
                       scr(n) = scr(n) + PJ(n,i,k)*Diff_ij(n,k,j)
                    enddo
@@ -762,8 +751,8 @@ contains
 
 
     ! Compute D_tilde
-    do i = 1, nspecies
-       do j = 1, nspecies
+    do i = 1, nspec
+       do j = 1, nspec
           do n=1,npts
              coeff%Dmat(n,i,j) = Diff_ij(n,i,j)*Yloc(n,i)
           enddo
@@ -805,8 +794,8 @@ contains
        DP_m_4      = 0.0d0
        KappaM      = 0.0d0
 
-       do j = 1,nspecies
-          do i = 1,nspecies
+       do j = 1,nspec
+          do i = 1,nspec
 
              T1 = sqrt(sig(i)*sig(j))
              T2 = sqrt(sig(i)*sig(j))*T1
@@ -928,18 +917,18 @@ contains
     implicit none
     type (trv_t), intent(inout) :: coeff
     integer :: i,j,k, n
-    real(amrex_real) :: Upsilon(nspecies,nspecies)
+    real(amrex_real) :: Upsilon(nspec,nspec)
     real(amrex_real), parameter :: Pst = 1013250.0d0
 
 
     do n = 1,coeff%npts
 
 
-       do j = 1, nspecies
-          do i = 1, nspecies
+       do j = 1, nspec
+          do i = 1, nspec
 
              Upsilon(i,j) = 0.0d0 
-             do k = 1, nspecies
+             do k = 1, nspec
                 Upsilon(i,j)  = Upsilon(i,j) + iwt(k)*coeff%eos_state(n)%massfrac(k)* ( &
                      8.0d0*(Sigmaij(i,k)**3.0d0 + Sigmaij(j,k)**3.0d0)    &
                      -6.0d0*(Sigmaij(i,k)*Sigmaij(i,k) + Sigmaij(j,k)*Sigmaij(j,k))*Sigmaij(i,j)    &

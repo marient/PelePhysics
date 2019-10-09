@@ -44,7 +44,6 @@ contains
 
 
   subroutine build_internal(npts)
-    implicit none
     integer, intent(in) :: npts
 
     call egzini(npts)
@@ -55,9 +54,9 @@ contains
        allocate(Tp(npts))
        allocate(L1(npts))
        allocate(L2(npts))
-       allocate(Yp(npts,nspecies))
-       allocate(Xp(npts,nspecies))
-       allocate(Cpp(npts,nspecies))
+       allocate(Yp(npts,nspec))
+       allocate(Xp(npts,nspec))
+       allocate(Cpp(npts,nspec))
        npts_egz = npts
     endif
 
@@ -65,8 +64,6 @@ contains
 
 
   subroutine destroy_internal
-
-    implicit none
 
     deallocate(Tp)
     deallocate(L1)
@@ -84,7 +81,6 @@ contains
 
     use amrex_error_module
     
-    implicit none
     type (wtr_t), intent(in   ) :: which
     type (trv_t), intent(inout) :: coeff
     integer :: i

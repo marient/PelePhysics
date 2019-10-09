@@ -65,7 +65,7 @@ contains
        lam,        lam_lo,lam_hi) &
        bind(C, name="get_transport_coeffs")
 
-    use network, only: nspecies
+    use network, only: nspec
     use eos_module
 
     implicit none
@@ -78,10 +78,10 @@ contains
     integer         , intent(in   ) ::  mu_lo(3), mu_hi(3)
     integer         , intent(in   ) ::  xi_lo(3), xi_hi(3)
     integer         , intent(in   ) :: lam_lo(3),lam_hi(3)
-    real (amrex_real), intent(in   ) :: massfrac(mf_lo(1):mf_hi(1),mf_lo(2):mf_hi(2),mf_lo(3):mf_hi(3),nspecies)
+    real (amrex_real), intent(in   ) :: massfrac(mf_lo(1):mf_hi(1),mf_lo(2):mf_hi(2),mf_lo(3):mf_hi(3),nspec)
     real (amrex_real), intent(in   ) :: temperature(t_lo(1):t_hi(1),t_lo(2):t_hi(2),t_lo(3):t_hi(3))
     real (amrex_real), intent(in   ) :: density(r_lo(1):r_hi(1),r_lo(2):r_hi(2),r_lo(3):r_hi(3))
-    real (amrex_real), intent(inout) :: D(D_lo(1):D_hi(1),D_lo(2):D_hi(2),D_lo(3):D_hi(3),nspecies)
+    real (amrex_real), intent(inout) :: D(D_lo(1):D_hi(1),D_lo(2):D_hi(2),D_lo(3):D_hi(3),nspec)
     real (amrex_real), intent(inout) :: mu(mu_lo(1):mu_hi(1),mu_lo(2):mu_hi(2),mu_lo(3):mu_hi(3))
     real (amrex_real), intent(inout) :: xi(xi_lo(1):xi_hi(1),xi_lo(2):xi_hi(2),xi_lo(3):xi_hi(3))
     real (amrex_real), intent(inout) :: lam(lam_lo(1):lam_hi(1),lam_lo(2):lam_hi(2),lam_lo(3):lam_hi(3))
@@ -103,7 +103,7 @@ contains
        do j = lo(2),hi(2)
 
           do i=1,np
-             coeff%eos_state(i)%massfrac(1:nspecies) = massfrac(lo(1)+i-1,j,k,1:nspecies)
+             coeff%eos_state(i)%massfrac(1:nspec) = massfrac(lo(1)+i-1,j,k,1:nspec)
           end do
 
           do i=lo(1),hi(1)
@@ -118,7 +118,7 @@ contains
              xi(i,j,k)  = coeff %  xi(i-lo(1)+1)
              lam(i,j,k) = coeff % lam(i-lo(1)+1)
           end do
-          do n=1,nspecies
+          do n=1,nspec
              do i=lo(1),hi(1)
                 D(i,j,k,n) = coeff % Ddiag(i-lo(1)+1,n)
              end do
@@ -131,61 +131,5 @@ contains
 
   end subroutine get_transport_coeffs
 
-  subroutine get_visco_coeffs( &
-       lo,hi, &
-       massfrac,    mf_lo, mf_hi, &
-       temperature,  t_lo,  t_hi, &
-       mu,          mu_lo, mu_hi) &
-       bind(C, name="get_visco_coeffs")
-
-    use network, only: nspecies
-    use eos_module
-
-    implicit none
-
-    integer         , intent(in   ) ::     lo(3),    hi(3)
-    integer         , intent(in   ) ::  mf_lo(3), mf_hi(3)
-    integer         , intent(in   ) ::   t_lo(3),  t_hi(3)
-    integer         , intent(in   ) ::  mu_lo(3), mu_hi(3)
-    real (amrex_real), intent(in   ) :: massfrac(mf_lo(1):mf_hi(1),mf_lo(2):mf_hi(2),mf_lo(3):mf_hi(3),nspecies)
-    real (amrex_real), intent(in   ) :: temperature(t_lo(1):t_hi(1),t_lo(2):t_hi(2),t_lo(3):t_hi(3))
-    real (amrex_real), intent(inout) :: mu(mu_lo(1):mu_hi(1),mu_lo(2):mu_hi(2),mu_lo(3):mu_hi(3))
-
-    ! local variables
-    integer      :: i, j, k, n, np
-    type (wtr_t) :: which_trans
-    type (trv_t) :: coeff
-
-    np = hi(1)-lo(1)+1
-    call build(coeff,np)
-
-    which_trans % wtr_get_xi    = .false.
-    which_trans % wtr_get_mu    = .true.
-    which_trans % wtr_get_lam   = .false.
-    which_trans % wtr_get_Ddiag = .false.
-
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-
-          do i=1,np
-             coeff%eos_state(i)%massfrac(1:nspecies) = massfrac(lo(1)+i-1,j,k,1:nspecies)
-          end do
-
-          do i=lo(1),hi(1)
-             coeff%eos_state(i-lo(1)+1)%T = temperature(i,j,k)
-          end do
-
-          call transport(which_trans, coeff)
-
-          do i=lo(1),hi(1)
-             mu(i,j,k)  = coeff %  mu(i-lo(1)+1)
-          end do
-
-       end do
-    end do
-
-    call destroy(coeff)
-
-  end subroutine get_visco_coeffs
 
 end module transport_module
