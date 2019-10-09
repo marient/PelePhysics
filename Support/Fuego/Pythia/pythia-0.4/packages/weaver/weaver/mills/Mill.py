@@ -21,10 +21,11 @@ class Mill(Stationery, Indenter):
 
     def pickle(self, document=None):
 
+        #print "PICKLE dans WEAVER"
+
         self._begin()
         if document:
-            #self._renderDocument(document)
-            self._renderDocument_CHOP(document)
+            self._renderDocument(document)
         self._end()
 
         return self._rep

@@ -14,7 +14,7 @@ module vode_module
   integer, allocatable, save :: vodeiwork(:), vodeipar(:)
   integer, save :: lvoderwork, lvodeiwork
 
-  !$omp threadprivate(verbose,itol,order,maxstep,mf,use_ajac,save_ajac,always_new_j,stiff,neq,voderwork,vodeiwork,voderpar,vodeipar,lvoderwork,lvodeiwork,rtol,atol)
+!$omp threadprivate(voderwork,vodeiwork,voderpar,vodeipar)
 
 contains
 
@@ -63,6 +63,7 @@ contains
 
     end if
 
+    !$omp parallel
     allocate(voderwork(lvoderwork))
     allocate(vodeiwork(lvodeiwork))
 
@@ -75,6 +76,7 @@ contains
     allocate(vodeipar(1))
 
     call setfirst(.true.)
+    !$omp end parallel
 
   end subroutine vode_init
 

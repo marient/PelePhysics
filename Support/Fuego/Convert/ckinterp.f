@@ -4918,7 +4918,7 @@ C              (ionic species indices)
      3       + KK
 C              (number of fit temperatures)
      4       + II*(2 + 2*MAXSP)
-C              (nspecies, nreac, nu, nunk)
+C              (nspec, nreac, nu, nunk)
      5       + NLAN
 C              (Landau-Teller reaction indices)
      6       + NRLT

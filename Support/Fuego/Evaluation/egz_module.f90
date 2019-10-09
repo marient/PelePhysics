@@ -1,7 +1,5 @@
 module egz_module
   
-  use fuego_chemistry
-
   implicit none
 
   private
